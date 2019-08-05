@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'auth.dart';
 import 'signin.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dashboard.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+
 class SignUpClass extends StatefulWidget {
-  SignUpClass({Key key}) : super(key: key);
+  final BaseAuth auth;
+  SignUpClass({this.auth});
+
 
   _SignUpClassState createState() => _SignUpClassState();
 }
@@ -16,7 +22,8 @@ class _SignUpClassState extends State<SignUpClass> {
   final userContactNo = TextEditingController();
   final userEmail = TextEditingController();
   final userPassword = TextEditingController();
-  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+
+
 
   @override
   void dispose() {
@@ -138,12 +145,32 @@ class _SignUpClassState extends State<SignUpClass> {
                 Padding(
                   padding: EdgeInsets.only(top: 20),
                   child: RaisedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (userEmail.text.isEmpty ||
                             userPassword.text.isEmpty) {
                           print("User email and password is null");
                         } else {
-                          createuser();
+                          final user =await widget.auth
+                          .createUserWithEmailAndPassword(
+                            userEmail.text, userPassword.text);
+                          print('$user');
+                          if(user!=null){
+                            Firestore.instance.collection('user').document(user).setData({
+                              'Name':userName.text,
+                              'Cnic': userCNIC.text,
+                              'Adress': userAdress.text,
+                              'Contact No': userContactNo,
+                              'Email':userEmail.text,
+                            });
+
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder:(BuildContext context) =>
+                                        DashboardScreen()));
+                          }
+
+
                         }
                       },
                       color: Colors.blue,
@@ -175,13 +202,5 @@ class _SignUpClassState extends State<SignUpClass> {
         ));
   }
 
-  Future<void> createuser() async {
-    var user = await firebaseAuth.createUserWithEmailAndPassword(
-        email: userEmail.text, password: userPassword.text);
-    print(user);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => DashboardScreen()),
-    );
-  }
+
 }
